@@ -34,9 +34,7 @@
         <activity
             android:name="com.smallemperor.bloodhound.MainActivity"
             android:label="@string/app_name"
-           android:theme="@android:style/Theme.Light.NoTitleBar.Fullscreen"  
-          
->
+           android:theme="@android:style/Theme.Light.NoTitleBar.Fullscreen">
             
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -55,6 +53,16 @@
             android:value="com.smallemperor.bloodhound.MainActivity" />
     	</activity>
         
+         <activity
+        	android:name="com.smallemperor.bloodhound.ReportActivity"
+        	android:label="@string/title_activity_display_message"
+        	android:parentActivityName="com.smallemperor.bloodhound.MainActivity" 
+        	 android:theme="@android:style/Theme.Light.NoTitleBar.Fullscreen" >
+        	<meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="com.smallemperor.bloodhound.MainActivity" />
+    	</activity>
+          
     </application>
 
 </manifest>

@@ -1,41 +1,37 @@
 package com.smallemperor.bloodhound;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
+import java.util.List;
+
+import android.app.ListActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
-import android.view.WindowManager;
-import android.content.Intent;
-import com.gimbal.proximity.Proximity;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.Toast;
+
 import com.gimbal.proximity.ProximityError;
 import com.gimbal.proximity.ProximityFactory;
 import com.gimbal.proximity.ProximityListener;
 import com.gimbal.proximity.Visit;
 import com.gimbal.proximity.VisitListener;
 import com.gimbal.proximity.VisitManager;
+import com.smallemperor.bloodhound.buisnessclasses.BloodHoundArrayAdapter;
+import com.smallemperor.bloodhound.db.DatabaseHandler;
+import com.smallemperor.bloodhound.pojo.Register;
 
-import android.widget.Button;
-import android.widget.ImageView;
-import android.view.View;
-import android.view.View.OnClickListener;
-
-public class MainActivity extends Activity implements ProximityListener,VisitListener {
+public class ReportActivity extends   ListActivity implements ProximityListener,VisitListener {
 
 	
 	ImageView image;
-	ImageView imagebg;
 	ImageView image1;
-	ImageView image2;
-	ImageView image3;
-	
-	  public final static String EXTRA_MESSAGE = "Starting Event 1";
-    
 
+	
 
     @Override
 
@@ -43,80 +39,59 @@ public class MainActivity extends Activity implements ProximityListener,VisitLis
 
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
-
+        //setContentView(R.layout.reportxml);
+    
         
-
-        Proximity.initialize(this,
-
-                "94e47e725835e2f5761d0174df5f5db704689069e38a341abc6326a49d19902d",
-
-                "9b66489c9e38c0475e11786c3244601ac62dde16ac9c483a27f3134210a63901");
-
+    	//image = (ImageView) findViewById(R.id.imageView1);
+    	//image.setImageResource(R.drawable.navbar);
+    	
+       
+    	//image1 = (ImageView) findViewById(R.id.imageView2);
+    	//image1.setImageResource(R.drawable.reportalert);
+    /*	LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+    	lp.setMargins(left, top, right, bottom);
+    	imageView.setLayoutParams(lp); */
+    	
+    	DatabaseHandler db = new DatabaseHandler(this);
+    	
+        String[] listDog = new String[db.getCount()];
+             int i=0;   
+  
+        List<Register> registers = db.getAll();       
+        for (Register cn : registers) {
+            String log = "ImageUr: "+cn.getImgurl()+" ,FName: " + cn.getfName() + " ,LName: " + cn.getlName();
+                // Writing Contacts to log
+            listDog[i]=log;
+            i++;
+            Log.d("Name: ", log);
+         }
         
-
-        //start the service
-
-        Proximity.startService(this);
-        
-      //  addListenerOnButton();
-        
-    	image = (ImageView) findViewById(R.id.imageView1);
-    	image.setImageResource(R.drawable.navbar);
-       // getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,  WindowManager.LayoutParams.FLAG_FULLSCREEN); 
+        setListAdapter(new BloodHoundArrayAdapter(getApplicationContext(), listDog));
     	
-        //requestWindowFeature(Window.FEATURE_NO_TITLE);  
-    	imagebg = (ImageView) findViewById(R.id.imageViewBg);
-    	imagebg.setImageResource(R.drawable.background);
-    	imagebg.setScaleType(ImageView.ScaleType.FIT_XY  );
-    	
-    	image1 = (ImageView) findViewById(R.id.imageView2);
-    	image1.setImageResource(R.drawable.register);
-    	
-    	image2 = (ImageView) findViewById(R.id.imageView3);
-    	image2.setImageResource(R.drawable.report);
-    	
-    	image3 = (ImageView) findViewById(R.id.imageView4);
-    	image3.setImageResource(R.drawable.activesearch);
-    	
-    	image1.setOnClickListener(new View.OnClickListener() {
+       /* image1.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                
-            	System.out.println("I  am inside the image1 one listner ");
-            	Intent intent = new Intent(getApplicationContext(), RegisterActivity.class);
-            	String message = "Bhushan Arun Ladde";
-            	intent.putExtra(EXTRA_MESSAGE, message);
-            	startActivity(intent);
-                //v.getId() will give you the image id
-
+            	System.out.println("Starting syn data.,.......");
+            
             }
-        });
+        });*/
     	
-    	image2.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-            	System.out.println("I  am inside the image2 one listner ");
-            	Intent intent = new Intent(getApplicationContext(), ReportActivity.class);
-            	startActivity(intent);
-                //v.getId() will give you the image id
-
-            }
-        });
-    	
-    	image3.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-            	System.out.println("I  am inside the image3 one listner ");
-
-                //v.getId() will give you the image id
-
-            }
-        });
+    
     	
     	
     }
 
 
+    @Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+ 
+		//get selected items
+		String selectedValue = (String) getListAdapter().getItem(position);
+		Toast.makeText(this, selectedValue, Toast.LENGTH_SHORT).show();
+ 
+	}
+ 
 
-
+   
 
     @Override
 

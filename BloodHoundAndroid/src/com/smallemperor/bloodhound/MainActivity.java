@@ -21,6 +21,7 @@ import com.gimbal.proximity.VisitManager;
 
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.view.View;
 import android.view.View.OnClickListener;
 
@@ -66,9 +67,13 @@ public class MainActivity extends Activity implements ProximityListener,VisitLis
        // getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,  WindowManager.LayoutParams.FLAG_FULLSCREEN); 
     	
         //requestWindowFeature(Window.FEATURE_NO_TITLE);  
-    	imagebg = (ImageView) findViewById(R.id.imageViewBg);
-    	imagebg.setImageResource(R.drawable.background);
-    	imagebg.setScaleType(ImageView.ScaleType.FIT_XY  );
+    	//imagebg = (ImageView) findViewById(R.id.imageViewBg);
+    	//imagebg.setImageResource(R.drawable.background);
+    	
+    	LinearLayout ll = (LinearLayout) findViewById(R.id.linear_layout_id);
+    	ll.setBackgroundResource(R.drawable.background);
+    
+    	//imagebg.setScaleType(ImageView.ScaleType.FIT_XY  );
     	
     	image1 = (ImageView) findViewById(R.id.imageView2);
     	image1.setImageResource(R.drawable.register);
@@ -187,6 +192,12 @@ public void receivedSighting(Visit arg0, Date arg1, Integer arg2) {
 Log.d("Proximity","Found Signal");
 
 Log.d("Proximity ID",arg0.getTransmitter().getIdentifier());
+
+
+//need to call fetch listner method. send this bcone to other servlet
+
+//bcone id put in hashmap
+
 
 }
 

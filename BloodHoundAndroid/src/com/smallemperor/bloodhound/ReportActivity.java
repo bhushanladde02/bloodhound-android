@@ -8,12 +8,18 @@ import java.util.List;
 import android.app.ListActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.OnItemClickListener;
 
 import com.gimbal.proximity.ProximityError;
 import com.gimbal.proximity.ProximityFactory;
@@ -30,7 +36,8 @@ public class ReportActivity extends   ListActivity implements ProximityListener,
 	
 	ImageView image;
 	ImageView image1;
-
+	ImageView uncheck;
+	ListView listView;
 	
 
     @Override
@@ -39,7 +46,7 @@ public class ReportActivity extends   ListActivity implements ProximityListener,
 
         super.onCreate(savedInstanceState);
 
-        //setContentView(R.layout.reportxml);
+        setContentView(R.layout.reportxml);
     
         
     	//image = (ImageView) findViewById(R.id.imageView1);
@@ -51,22 +58,73 @@ public class ReportActivity extends   ListActivity implements ProximityListener,
     /*	LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
     	lp.setMargins(left, top, right, bottom);
     	imageView.setLayoutParams(lp); */
-    	
+        
+        // Get ListView object from xml
     	DatabaseHandler db = new DatabaseHandler(this);
     	
+       
         String[] listDog = new String[db.getCount()];
-             int i=0;   
+        int i=0;   
+
+	   List<Register> registers = db.getAll();       
+	   for (Register cn : registers) {
+	       String log = ""+cn.getImgurl()+ ","+cn.getfName() +", "+ cn.getlName();
+	           // Writing Contacts to log
+	       listDog[i]=log;
+	       i++;
+	       Log.d("Name: ", log);
+	    }
+	        
   
-        List<Register> registers = db.getAll();       
-        for (Register cn : registers) {
-            String log = "ImageUr: "+cn.getImgurl()+" ,FName: " + cn.getfName() + " ,LName: " + cn.getlName();
-                // Writing Contacts to log
-            listDog[i]=log;
-            i++;
-            Log.d("Name: ", log);
-         }
+
+       
+    	
+    
+  
+        listView = (ListView) findViewById(android.R.id.list);
+		
+		//code to add header and footer to listview
+		LayoutInflater inflater = getLayoutInflater();
+		ViewGroup header = (ViewGroup) inflater.inflate(R.layout.header, listView,
+				false);
+		ViewGroup footer = (ViewGroup) inflater.inflate(R.layout.footer, listView,
+				false);
+		listView.addHeaderView(header, null, false);
+		listView.addFooterView(footer, null, false);
+		
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+				android.R.layout.simple_list_item_1, listDog);
+
+		  
+		
+		//listView.setAdapter(adapter);
+		listView.setAdapter(new BloodHoundArrayAdapter(getApplicationContext(), listDog));
+		listView.setOnItemClickListener(new OnItemClickListener() {
+			public void onItemClick(AdapterView<?> parent, View v,
+					int position, long id) {
+				Toast.makeText(getApplicationContext(),
+						((TextView) v).getText(), Toast.LENGTH_SHORT).show();
+			}
+		});
         
-        setListAdapter(new BloodHoundArrayAdapter(getApplicationContext(), listDog));
+        
+        
+        
+		// setListAdapter();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
     	
        /* image1.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {

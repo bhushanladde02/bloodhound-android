@@ -15,10 +15,12 @@ import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntity;
@@ -33,7 +35,6 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
-import org.springframework.util.support.Base64;
 
 
 import com.smallemperor.bloodhound.db.DatabaseHandler;
@@ -41,6 +42,7 @@ import com.smallemperor.bloodhound.pojo.Register;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -49,12 +51,14 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.MediaColumns;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
@@ -291,7 +295,7 @@ public class RegisterActivity extends Activity {
 							Intent intent = new Intent(getApplicationContext(), MainActivity.class);   
 			            	startActivity(intent);
 			            	//String resultServer= POST("http://smallemperor.com:8080/BloodHoundBackend/UploadServlet",register);
-			            	new HttpAsyncTask().execute("http://smallemperor.com:8080/BloodHoundBackend/UploadServlet");//(pradeep server)
+			            	new HttpAsyncTask(RegisterActivity.this).execute("http://smallemperor.com:8080/BloodHoundBackend/UploadServlet");//(pradeep server)
 			            	//new HttpAsyncTask().execute("http://192.168.42.229:8080/BloodHoundBackend/UploadServlet");//(bhushan local system- check ip of system everytime)
 			            	
 			            	
@@ -499,19 +503,17 @@ private static String convertInputStreamToString(InputStream inputStream) throws
 public static String POST(String url, Register register){
     InputStream inputStream = null;
     String result = "";
-    String result1 = "";
     try {
 
         // 1. create HttpClient
         HttpClient httpclient = new DefaultHttpClient();
-
         
         // 2. make POST request to the given URL
         HttpPost httpPost = new HttpPost(url);
         
         String json = "";
         
-        String name = selectedImagePath.substring(selectedImagePath.lastIndexOf("/") + 1);
+        String name = register.getImgurl();
         
 
         // 3. build jsonObject
@@ -521,7 +523,8 @@ public static String POST(String url, Register register){
         jsonObject.accumulate("firstname", register.getfName());
         
         jsonObject.accumulate("lastname", register.getlName());
-        jsonObject.accumulate("imgURL",name);// register.getImgurl());//.replace("/", "\\"));
+        String imageName = name.substring(name.lastIndexOf("/")+1);
+        jsonObject.accumulate("imgURL",imageName);// register.getImgurl());//.replace("/", "\\"));
         jsonObject.accumulate("age", register.getAge());
         
         jsonObject.accumulate("height", register.getHeight());
@@ -547,116 +550,36 @@ public static String POST(String url, Register register){
         // ObjectMapper mapper = new ObjectMapper();
         // json = mapper.writeValueAsString(person); 
         // 7. Set some headers to inform server about the type of the content   
+              
+        String boundaryConstant  = "----------V2ymHFg03ehbqgZCaKO6jy";
+  
+        
         httpPost.setHeader("Accept", "application/json");
-        httpPost.setHeader("Content-type", "application/json");
+        httpPost.setHeader("Content-type", "multipart/form-data; boundary="+boundaryConstant);
       //  httpPost.setHeader("jsonString",json);
         httpPost.addHeader(new BasicHeader("jsonString",json));
         
         
-
-        // 5. set json to StringEntity
-       // StringEntity se = new StringEntity(json);
-
-        
-    	//File f=new File(selectedImagePath);
-		//FileBody bin = new FileBody(f);
-
-		//MultipartEntityBuilder multiPartEntityBuilder = MultipartEntityBuilder.create();
-		//multiPartEntityBuilder.addPart("images[1]", bin);
-		
-        // 6. set httpPost Entity
-        //httpPost.setEntity(se);
-
-       // httpPost.setEntity(multiPartEntityBuilder.build());
-        
-        //Try to experiment here
-        
-         name = selectedImagePath.substring(selectedImagePath.lastIndexOf("/") + 1);
-        	     // instead of "/" you can also use File.sepearator
-        	     System.out.println("......"+ name);
-        	    
-      /*  
-        BasicHttpContext	     localContext = new BasicHttpContext();
-        MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        bitmap = BitmapFactory.decodeFile(selectedImagePath);
-        bitmap.compress(CompressFormat.JPEG, 75, byteArrayOutputStream); 
-        byte[] byteData = byteArrayOutputStream.toByteArray();
-        //String strData = Base64.encodeToString(data, Base64.DEFAULT); // I have no idea why Im doing this
-        ByteArrayBody byteArrayBody = new ByteArrayBody(byteData, "image"); // second parameter is the name of the image (//TODO HOW DO I MAKE IT USE THE IMAGE FILENAME?)
-
-        // send the package
+        StringBuilder data = new StringBuilder();
        
+        Bitmap fullImage = BitmapFactory.decodeFile(register.getImgurl());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        fullImage.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] b = baos.toByteArray();
+        String encodedImage = Base64.encodeToString(b,Base64.DEFAULT);
+        String FileParamConstant = "file";
         
-        reqEntity.addPart("name", new StringBody(name));
-        reqEntity.addPart("filename", new StringBody(selectedImagePath));
-        reqEntity.addPart("uploaded_file", byteArrayBody);
+        data.append("--"+boundaryConstant+"\r\n");
+        data.append("Content-Disposition: form-data; name=\""+FileParamConstant+"\";filename=\""+name+"\"\r\n");
+        data.append("Content-Type: image/jpeg\r\n\r\n");
+        data.append(encodedImage);
+        data.append("\r\n");
 
-        httpPost.setEntity(reqEntity);*/
-        	     
-        	     /*
-        	       HttpClient httpClient = new DefaultHttpClient();
-    			   HttpPost postRequest = new HttpPost("You Link");
-                   MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
-				    reqEntity.addPart("name", new StringBody("Name"));
-				    reqEntity.addPart("Id", new StringBody("ID"));
-				    reqEntity.addPart("title",new StringBody("TITLE"));
-				    reqEntity.addPart("caption", new StringBody("Caption"));
-				    try{
-				        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				        bitmap.compress(CompressFormat.JPEG, 75, bos);
-				        byte[] data = bos.toByteArray();
-				        ByteArrayBody bab = new ByteArrayBody(data, "forest.jpg");
-				        reqEntity.addPart("picture", bab);
-				    }
-				    catch(Exception e){
-				        //Log.v("Exception in Image", ""+e);
-				        reqEntity.addPart("picture", new StringBody(""));
-				    }
-				    postRequest.setEntity(reqEntity); 
-				  */
-        	     
-        	     
-        	    // HttpClient client = new DefaultHttpClient();
-        	     httpclient.getParams().setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-        	      
-        	    // HttpPost        post   = new HttpPost( url );
-        	     MultipartEntity entity = new MultipartEntity( HttpMultipartMode.BROWSER_COMPATIBLE );
-        	      
-        	     try{
-        	    	 Bitmap  bMap = BitmapFactory.decodeFile(selectedImagePath);
-				        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				        bMap.compress(CompressFormat.PNG, 75, bos);
-				        byte[] data = bos.toByteArray();
-				        ByteArrayBody bab = new ByteArrayBody(data, name);
-				        entity.addPart("filename", bab);
-				    }
-				    catch(Exception e){
-				        //Log.v("Exception in Image", ""+e);
-				    	entity.addPart("filename", new StringBody(""));
-				    }
-        	     // For File parameters
-//        	     entity.addPart( name, new FileBody((( new File(selectedImagePath) ) ), "image/jpeg" ));
-        	      
-        	     // For usual String parameters
-        	  //   entity.addPart( "name", new StringBody( name, "text/plain",  Charset.forName( "UTF-8" )));
-        	     // For usual String parameters
-        	    // entity.addPart( "fi lename", new StringBody(selectedImagePath, "text/plain", 
-        	      //                                          Charset.forName( "UTF-8" )));
-        	     
-        	     httpPost.setEntity( entity );
-        	    
-        	     // Here we go!
-        	     
-        
-        //finished experiment here
+        data.append("--"+boundaryConstant+"--\r\n");
         
         
-        
-        
-        
-        
-        
+        HttpEntity entity = new ByteArrayEntity(data.toString().getBytes("UTF-8"));
+        httpPost.setEntity(entity);
         
         // 8. Execute POST request to the given URL
         HttpResponse httpResponse = httpclient.execute(httpPost);
@@ -694,6 +617,17 @@ public static String POST(String url, Register register){
 }
 
 private class HttpAsyncTask extends AsyncTask<String, Void, String> {
+	
+	private Context context;
+	private ProgressDialog pdia;
+	
+	public HttpAsyncTask(Context context){
+		this.context = context;
+	}
+	
+
+	
+	
     @Override
     protected String doInBackground(String... urls) {
        Register register=new Register();
@@ -715,11 +649,7 @@ private class HttpAsyncTask extends AsyncTask<String, Void, String> {
        	 EditText action =null;
        	 EditText report =null;//not there
     	
-    	System.out.println("I  am inside the inserting data listner ");
-    	String message = "Bhushan Arun Ladde";
-    	
     	beaconeId = (EditText)findViewById(R.id.editTextId);
-    	System.out.println("IIIIIIIIIIIIIIIIIDDDDDDDDDDDDDDDDDDD"+beaconeId.getText().toString());
     	register.setBeaconeId(beaconeId.getText().toString());
     	
     	fName= (EditText)findViewById(R.id.editTextFname);
@@ -764,129 +694,46 @@ private class HttpAsyncTask extends AsyncTask<String, Void, String> {
     	action=(EditText)findViewById(R.id.editTextifFind);
         register.setAction(action.getText().toString()); 
     	
-        
+       
         //Not There so Temp Data fill
         register.setReport("Report 1");
         register.setImgurl(selectedImagePath);
+        
        // ImageUpload();//uploading images to server
-        return POST(urls[0],register);
+        String result = null;
+        try{
+        	result = POST(urls[0],register);
+        }catch(Exception e){
+        	e.printStackTrace();
+        }finally{
+        	pdia.dismiss();
+        }
+        
+        return result;
     }
     // onPostExecute displays the results of the AsyncTask.
     @Override
     protected void onPostExecute(String result) {
-    	System.out.println("#####################################result#########################################"+result);
-    	
-        Toast.makeText(getBaseContext(), "Data Sent!", Toast.LENGTH_LONG).show();
+    	try {
+			Utils.showDialog("Registration Successful ", context);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		Intent in = new Intent(context, MainActivity.class);
+		in.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); 
+		context.startActivity(in);
    }
    
     @Override
 	protected void onPreExecute() {
 		// TODO Auto-generated method stub
 		super.onPreExecute();
-		
+		pdia = new ProgressDialog(context);
+	    pdia.setMessage("Registering...");
+	    pdia.show();  	
 	}
    
 }
-public static String ImageUpload() // where it is used just comment it. all going to work fine
-{
-	/*
-	// TODO Auto-generated method stub
-				String result = "";
-
-				// Client-side HTTP transport library
-				HttpClient httpClient = new DefaultHttpClient();
-
-				// using POST method
-				HttpPost httpPostRequest = new HttpPost("http://smallemperor.com:8080/images/");
-				try {
-
-					// creating a file body consisting of the file that we want to
-					// send to the server
-					File f=new File(selectedImagePath);
-					FileBody bin = new FileBody(f);
-
-					MultipartEntityBuilder multiPartEntityBuilder = MultipartEntityBuilder.create();
-					multiPartEntityBuilder.addPart("images[1]", bin);
-					httpPostRequest.setEntity(multiPartEntityBuilder.build());
-
-					// Execute POST request to the given URL
-					HttpResponse httpResponse = null;
-					httpResponse = httpClient.execute(httpPostRequest);
-
-					// receive response as inputStream
-					InputStream inputStream = null;
-					inputStream = httpResponse.getEntity().getContent();
-
-					if (inputStream != null)
-						result = convertInputStreamToString(inputStream);
-					else
-						result = "Did not work!";
-					return result;
-				} catch (Exception e) {
-
-					return null;
-				}
-
-				// return result;*/
-				try{
-					// Decode with inSampleSize
-					//extra
-					 // Decode image size
-					  BitmapFactory.Options o = new BitmapFactory.Options();
-					  o.inJustDecodeBounds = true;
-					  BitmapFactory.decodeFile(selectedImagePath, o);
-
-					  // The new size we want to scale to
-					  final int REQUIRED_SIZE = 1024;
-
-					  // Find the correct scale value. It should be the power of 2.
-					  int width_tmp = o.outWidth, height_tmp = o.outHeight;
-					  int scale = 1;
-					  while (true) {
-					   if (width_tmp < REQUIRED_SIZE && height_tmp < REQUIRED_SIZE)
-					    break;
-					   width_tmp /= 2;
-					   height_tmp /= 2;
-					   scale *= 2;
-					  }
-
-					  // Decode with inSampleSize
-					  BitmapFactory.Options o2 = new BitmapFactory.Options();
-					  o2.inSampleSize = scale;
-					  Bitmap bitmap = BitmapFactory.decodeFile(selectedImagePath, o2);
-
-					  
-					
-					//extraa
-					
-					
-			       String webAddressToPost = "http://smallemperor.com:8080/images/";
-				   HttpClient httpClient = new DefaultHttpClient();
-				   HttpContext localContext = new BasicHttpContext();
-				   HttpPost httpPost = new HttpPost(webAddressToPost);
-			
-				   MultipartEntity entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
-			
-				   ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				   bitmap.compress(CompressFormat.JPEG, 100, bos);
-				   byte[] data = bos.toByteArray();
-				   String file = Base64.encodeBytes(data);
-			
-				   entity.addPart("uploaded", new StringBody(file));
-				   entity.addPart("someOtherStringToSend", new StringBody("your string here"));
-			
-				   httpPost.setEntity(entity);
-				   HttpResponse response = httpClient.execute(httpPost,localContext);
-				   BufferedReader reader = new BufferedReader(new InputStreamReader(
-				     response.getEntity().getContent(), "UTF-8"));
-			
-				   String sResponse = reader.readLine();
-				   return sResponse;
-				  } catch (Exception e) {
-				   // something went wrong. connection with the server error
-				  }
-				  return null;
-   }
   
 public void validation(String msg,View v)
 {

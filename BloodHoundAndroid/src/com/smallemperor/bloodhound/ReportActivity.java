@@ -102,8 +102,7 @@ public class ReportActivity extends   ListActivity implements ProximityListener,
 		listView.setOnItemClickListener(new OnItemClickListener() {
 			public void onItemClick(AdapterView<?> parent, View v,
 					int position, long id) {
-				Toast.makeText(getApplicationContext(),
-						((TextView) v).getText(), Toast.LENGTH_SHORT).show();
+				//Toast.makeText(getApplicationContext(),	((TextView) v).getText(), Toast.LENGTH_SHORT).show();
 			}
 		});
         

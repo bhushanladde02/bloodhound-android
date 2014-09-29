@@ -1,16 +1,25 @@
 package com.smallemperor.bloodhound;
 
 import java.util.Date;
+import java.util.HashMap;
+
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.bluetooth.BluetoothAdapter;
+import android.content.Intent;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
-import android.view.WindowManager;
-import android.content.Intent;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
 import com.gimbal.proximity.Proximity;
 import com.gimbal.proximity.ProximityError;
 import com.gimbal.proximity.ProximityFactory;
@@ -18,12 +27,6 @@ import com.gimbal.proximity.ProximityListener;
 import com.gimbal.proximity.Visit;
 import com.gimbal.proximity.VisitListener;
 import com.gimbal.proximity.VisitManager;
-
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.view.View;
-import android.view.View.OnClickListener;
 
 public class MainActivity extends Activity implements ProximityListener,VisitListener {
 
@@ -34,9 +37,25 @@ public class MainActivity extends Activity implements ProximityListener,VisitLis
 	ImageView image2;
 	ImageView image3;
 	
+	public HashMap<String,Integer> notificationHashmap  = new HashMap<String, Integer>();
+	
 	  public final static String EXTRA_MESSAGE = "Starting Event 1";
     
 
+	  public static boolean setBluetooth(boolean enable) {
+		    BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+		    boolean isEnabled = bluetoothAdapter.isEnabled();
+		    if (enable && !isEnabled) {
+		        return bluetoothAdapter.enable(); 
+		    }
+		    else if(!enable && isEnabled) {
+		        return bluetoothAdapter.disable();
+		    }
+		    // No need to change bluetooth state
+		    return true;
+		}
+	  
+	  
 
     @Override
 
@@ -46,7 +65,7 @@ public class MainActivity extends Activity implements ProximityListener,VisitLis
 
         setContentView(R.layout.activity_main);
 
-        
+        //setBluetooth(true);
 
         Proximity.initialize(this,
 
@@ -162,10 +181,7 @@ public class MainActivity extends Activity implements ProximityListener,VisitLis
 
 
 
-
-
 @Override
-
 public void serviceStarted() {
 
 // TODO Auto-generated method stub
@@ -176,10 +192,7 @@ public void serviceStarted() {
 
         Log.d("Proximity","Proximity Service successfully started!");    
 
-        
-
         VisitManager visitManager = ProximityFactory.getInstance().createVisitManager();
-
         visitManager.setVisitListener(new VisitListener() {
 
 
@@ -193,11 +206,31 @@ Log.d("Proximity","Found Signal");
 
 Log.d("Proximity ID",arg0.getTransmitter().getIdentifier());
 
+String beaconID = arg0.getTransmitter().getIdentifier();
 
-//need to call fetch listner method. send this bcone to other servlet
-
-//bcone id put in hashmap
-
+if(!notificationHashmap.containsKey(beaconID)){
+	//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+	
+	NotificationCompat.Builder mBuilder =
+	       new NotificationCompat.Builder(MainActivity.this)
+	        .setSmallIcon(R.drawable.ic_launcher)
+	        .setContentTitle("Found Beacon "+beaconID)
+	        .setContentText("Save Life BloodHound");
+	// Creates an explicit intent for an Activity in your app
+	Intent resultIntent = new Intent(MainActivity.this, ReportActivity.class);
+     
+	NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+	try {
+        Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+        r.play();
+    } catch (Exception e) {}
+	
+	mBuilder.getNotification().flags = Notification.FLAG_AUTO_CANCEL;
+	notificationManager.notify(0, mBuilder.getNotification());
+	
+	notificationHashmap.put(beaconID, 1);
+}
 
 }
 
@@ -247,9 +280,7 @@ public void startServiceFailed(int arg0, String arg1) {
         //check for the error Code for Bluetooth status check
 
         if (arg0 == ProximityError.PROXIMITY_BLUETOOTH_IS_OFF.getCode()) {
-
             //turn on the bluetooth and once the bluetooth is ON call startService again.
-
         }
 
 

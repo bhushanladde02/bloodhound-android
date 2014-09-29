@@ -37,12 +37,6 @@
             android:label="@string/app_name"
            android:theme="@android:style/Theme.Light.NoTitleBar.Fullscreen"
              android:screenOrientation="portrait">
-            
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         
           <activity
@@ -66,6 +60,16 @@
             android:name="android.support.PARENT_ACTIVITY"
             android:value="com.smallemperor.bloodhound.MainActivity" />
     	</activity>
+    	
+          <activity
+            android:name=".SplashActivity"
+            android:screenOrientation="portrait" 
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
           
     </application>
 
